@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5f6b">
+<title>BrankasTim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceff1;--card:#fff;--tx:#17262b;--mu:#5b6b72;--bd:#d3dadd;--ac:#1f5f6b;--acx:#fff;--br:#b07d2a;--dg:#b3261e;--sh:0 1px 0 rgba(23,38,43,.06)}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0f1a1e;--card:#16262b;--tx:#e6eef0;--mu:#93a6ad;--bd:#27393f;--ac:#5fb3c2;--acx:#0a1a1e;--br:#d9a54a;--dg:#ff8a80}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);background:var(--bg);color:var(--tx);font:15px/1.5 "Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:16px 14px 70px}
+h1,h2{margin:0;letter-spacing:-.01em}
+h1{font-size:21px}h2{font-size:18px}
+.mu{color:var(--mu);font-size:13px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea,button{font:inherit;color:var(--tx)}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;background:var(--card)}
+textarea{min-height:72px;resize:vertical}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);padding:8px 13px;border-radius:8px}
+button:hover{border-color:var(--ac)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--br);outline-offset:1px}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+button.d{color:var(--dg)}
+button.s{padding:3px 9px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.proj{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.proj:hover{border-color:var(--ac)}
+.badge{font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px;background:var(--ac);color:var(--acx)}
+.badge.b{background:var(--br);color:#1a1205}
+.kv{display:grid;grid-template-columns:78px 1fr auto;gap:6px 8px;align-items:center;margin-top:9px;font-size:14px}
+.kv .k{color:var(--mu)}.kv .v{overflow-wrap:anywhere}
+.note{margin-top:9px;font-size:13px;color:var(--mu);white-space:pre-wrap}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+#modal{position:fixed;inset:0;background:rgba(5,12,14,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 12px;z-index:20}
+#modal .card{width:100%;max-width:470px;margin:4vh 0}
+.err{color:var(--dg);font-size:13px;min-height:18px;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:7px 14px;border-radius:99px;font-size:13px;display:none;z-index:30;max-width:90%}
+.login{max-width:360px;margin:14vh auto 0;text-align:center}
+.login svg{width:76px;height:76px;margin-bottom:10px}
+.login h1{font-size:30px}
+.login p{color:var(--mu)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+.tbl th,.tbl td{border:1px solid var(--bd);padding:6px 7px;text-align:left;vertical-align:top}
+.tbl .me{background:rgba(176,125,42,.18);font-weight:600}
+.hl{margin:6px 0 0;padding-left:18px;font-size:14px}
+.hl li{margin-bottom:4px}
+.mem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import{getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import{getFirestore,collection,doc,query,where,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc,arrayUnion,arrayRemove,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const SUPER='keruarue@gmail.com';
+const fb=initializeApp({apiKey:"AIzaSyC83GzlwZZYZ5So4tIbrdNOuxp3trFLtMY",authDomain:"memo-b5f81.firebaseapp.com",projectId:"memo-b5f81",storageBucket:"memo-b5f81.firebasestorage.app",messagingSenderId:"742469469397",appId:"1:742469469397:web:55712e8163e4bbffd1ce5c"});
+const auth=getAuth(fb),db=getFirestore(fb);
+const PROV=['Gmail','Yahoo','Facebook','mail.id','Zimbra','Outlook','Lainnya'];
+const $=s=>document.querySelector(s),app=$('#app'),modal=$('#modal');
+let me=null,projects=[],cur=null,accounts=[],q='',unP=null,unA=null,unD=null,curDoc=null;
+
+function h(t,a,...k){const e=document.createElement(t);
+ for(const[n,v]of Object.entries(a||{})){if(n==='onclick')e.onclick=v;else if(n==='class')e.className=v;else e.setAttribute(n,v)}
+ for(const c of k.flat())if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c));return e}
+function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>x.style.display='none',2200)}
+const closeM=()=>modal.style.display='none';
+const showM=(...k)=>{modal.replaceChildren(h('div',{class:'card'},...k));modal.style.display='flex'};
+const ask=(msg,ok)=>new Promise(res=>{const d=v=>{closeM();res(v)};
+ showM(h('p',{style:'margin:0 0 14px'},msg),h('div',{class:'row',style:'justify-content:flex-end'},h('button',{onclick:()=>d(false)},'Batal'),h('button',{class:'p',onclick:()=>d(true)},ok||'Ya')))});
+const isSuper=()=>me===SUPER;
+const isAdmin=()=>isSuper()||(curDoc&&curDoc.admins.includes(me));
+const errMsg=e=>e&&e.code==='permission-denied'?'Tidak ada izin untuk tindakan ini.':(e&&(e.message||e.code))||'Terjadi kesalahan';
+
+/* ---------- Login ---------- */
+function renderLogin(msg){
+ app.replaceChildren(h('div',{class:'login'},
+  (()=>{const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 76 76');
+   s.innerHTML='<rect x="6" y="6" width="64" height="64" rx="14" fill="none" stroke="var(--ac)" stroke-width="4"/><circle cx="38" cy="33" r="10" fill="var(--br)"/><path d="M33 40h10l3 18H30z" fill="var(--br)"/>';return s})(),
+  h('h1',{},'BrankasTim'),
+  h('p',{},'Catatan akun bersama untuk tim. Masuk dengan akun Google yang sudah didaftarkan admin.'),
+  h('button',{class:'p',style:'width:100%;padding:11px',onclick:login},'Masuk dengan Google'),
+  h('div',{class:'err'},msg||'')))}
+async function login(){
+ const p=new GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+ try{await signInWithPopup(auth,p)}
+ catch(e){if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment')await signInWithRedirect(auth,p);else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')renderLogin('Gagal masuk: '+errMsg(e))}}
+function logout(){[unP,unA,unD].forEach(u=>u&&u());unP=unA=unD=null;cur=curDoc=null;projects=[];accounts=[];signOut(auth)}
+
+onAuthStateChanged(auth,u=>{
+ if(!u){me=null;renderLogin();return}
+ if(!u.emailVerified){signOut(auth);renderLogin('Email belum terverifikasi.');return}
+ me=u.email.toLowerCase();watchProjects()});
+
+/* ---------- Bantuan ---------- */
+function help(){
+ const role=isSuper()?0:(cur&&curDoc?(isAdmin()?1:2):-1);
+ const label=['Admin utama','Admin proyek','Anggota'][role]||'Admin proyek atau Anggota, tergantung proyek';
+ const head=['','Admin utama','Admin proyek','Anggota'];
+ const rows=[
+  ['Melihat proyek','Semua proyek','Proyek miliknya','Proyek miliknya'],
+  ['Melihat, mencari, dan menyalin akun','Ya','Ya','Ya'],
+  ['Tambah, edit, dan hapus akun','Ya','Ya','Ya'],
+  ['Cadangkan dan pulihkan','Ya','Ya','Ya'],
+  ['Kelola akses (tambah atau cabut anggota)','Ya','Ya','Tidak'],
+  ['Membuat proyek baru','Ya','Tidak','Tidak']];
+ const t=h('table',{class:'tbl'},
+  h('tr',{},...head.map((x,i)=>h('th',{class:i&&role===i-1?'me':''},x))),
+  ...rows.map(r=>h('tr',{},...r.map((c,i)=>h(i?'td':'th',{class:i&&role===i-1?'me':''},c)))));
+ showM(h('h2',{},'Bantuan'),
+  h('p',{class:'mu'},'Peran Anda saat ini: '+label),
+  h('strong',{},'Fitur'),
+  h('ul',{class:'hl'},
+   h('li',{},'Masuk dengan Google. Hanya email yang didaftarkan admin yang bisa masuk ke sebuah proyek.'),
+   h('li',{},'Proyek. Setiap proyek punya daftar anggota dan daftar akun sendiri, terpisah dari proyek lain.'),
+   h('li',{},'Daftar akun: jenis, akun, server email, password, dan catatan. Ada pencarian, tombol Salin, dan tombol Lihat untuk sandi.'),
+   h('li',{},'Setiap akun mencatat kapan dan oleh siapa terakhir diperbarui.'),
+   h('li',{},'Cadangkan menyimpan semua akun proyek ke file JSON. Pulihkan membaca file itu kembali. File cadangan berisi password tanpa enkripsi.'),
+   h('li',{},'Kelola akses (khusus admin) untuk menambah atau mencabut anggota dan menjadikan seseorang admin.')),
+  h('div',{style:'margin-top:12px'},h('strong',{},'Hak akses')),t,
+  h('div',{class:'row',style:'margin-top:8px;justify-content:flex-end'},h('button',{class:'p',onclick:closeM},'Tutup')))}
+
+/* ---------- Proyek ---------- */
+function watchProjects(){
+ if(unP)unP();
+ const base=collection(db,'projects');
+ const qq=isSuper()?base:query(base,where('memberEmails','array-contains',me));
+ unP=onSnapshot(qq,s=>{projects=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.name.localeCompare(b.name));if(!cur)renderHome()},
+  e=>{app.replaceChildren(h('p',{class:'err'},'Gagal memuat proyek: '+errMsg(e)))});
+ renderHome()}
+function topbar(left){return h('div',{class:'bar'},left,h('div',{class:'row'},h('span',{class:'mu'},me),h('button',{class:'s',onclick:help},'Bantuan'),h('button',{class:'s',onclick:logout},'Keluar')))}
+function renderHome(){
+ app.replaceChildren(topbar(h('h1',{},'BrankasTim')),
+  h('div',{class:'bar'},h('h2',{},'Proyek'),isSuper()?h('button',{class:'p',onclick:newProject},'+ Proyek baru'):null),
+  ...(projects.length?projects.map(p=>h('div',{class:'card proj',onclick:()=>openProject(p.id)},
+    h('div',{},h('strong',{},p.name),h('div',{class:'mu'},p.memberEmails.length+' anggota')),
+    p.admins.includes(me)||isSuper()?h('span',{class:'badge b'},'Admin'):h('span',{class:'badge'},'Anggota'))):
+   [h('p',{class:'mu'},isSuper()?'Belum ada proyek. Klik Proyek baru.':'Email '+me+' belum terdaftar di proyek mana pun. Minta admin menambahkannya.')]))}
+function newProject(){
+ const n=h('input',{placeholder:'mis. Proyek A'});const err=h('div',{class:'err'});
+ showM(h('h2',{},'Proyek baru'),h('label',{},'Nama proyek'),n,err,
+  h('div',{class:'row',style:'margin-top:12px;justify-content:flex-end'},h('button',{onclick:closeM},'Batal'),
+   h('button',{class:'p',onclick:async()=>{if(!n.value.trim()){err.textContent='Isi nama proyek.';return}
+    try{await addDoc(collection(db,'projects'),{name:n.value.trim(),admins:[SUPER],memberEmails:[SUPER],createdAt:serverTimestamp()});closeM();toast('Proyek dibuat')}catch(e){err.textContent=errMsg(e)}}},'Buat')));n.focus()}
+
+/* ---------- Isi proyek ---------- */
+function openProject(id){
+ cur=id;q='';curDoc=projects.find(p=>p.id===id)||null;accounts=[];
+ if(unA)unA();if(unD)unD();
+ unD=onSnapshot(doc(db,'projects',id),s=>{if(!s.exists()){cur=null;renderHome();return}curDoc={id,...s.data()};renderProject()});
+ unA=onSnapshot(collection(db,'projects',id,'accounts'),s=>{
+  accounts=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((a.provider||'')+(a.user||'')).localeCompare((b.provider||'')+(b.user||'')));renderList()},
+  e=>toast('Gagal memuat akun: '+errMsg(e)));
+ renderProject()}
+function back(){[unA,unD].forEach(u=>u&&u());unA=unD=null;cur=curDoc=null;renderHome()}
+function renderProject(){
+ if(!curDoc)return;
+ const s=h('input',{type:'search',placeholder:'Cari akun, server, atau catatan…',value:q});
+ s.oninput=()=>{q=s.value.toLowerCase();renderList()};
+ app.replaceChildren(topbar(h('div',{class:'row'},h('button',{class:'s',onclick:back},'‹ Proyek'),h('h1',{},curDoc.name))),
+  h('div',{class:'row',style:'margin-bottom:12px'},
+   h('button',{class:'p',onclick:()=>edit()},'+ Tambah akun'),h('button',{onclick:backup},'Cadangkan'),h('button',{onclick:restore},'Pulihkan'),
+   isAdmin()?h('button',{onclick:manage},'Kelola akses'):null),
+  s,h('div',{style:'height:12px'}),h('div',{id:'cnt',class:'mu',style:'margin-bottom:8px'}),h('div',{id:'list'}));
+ renderList()}
+function field(l,val,secret){
+ if(!val)return[];let shown=!secret;
+ const v=h('div',{class:'v'},secret?'••••••••':val);const b=h('div',{class:'row'});
+ if(secret)b.append(h('button',{class:'s',onclick:e=>{shown=!shown;v.textContent=shown?val:'••••••••';e.target.textContent=shown?'Sembunyi':'Lihat'}},'Lihat'));
+ b.append(h('button',{class:'s',onclick:async()=>{try{await navigator.clipboard.writeText(val);toast('Disalin')}catch(e){toast('Tidak bisa menyalin')}}},'Salin'));
+ return[h('div',{class:'k'},l),v,b]}
+function renderList(){
+ const l=$('#list');if(!l)return;
+ const f=accounts.filter(e=>!q||[e.provider,e.user,e.server,e.note].join(' ').toLowerCase().includes(q));
+ $('#cnt').textContent=accounts.length+' akun tersimpan';
+ l.replaceChildren(...(f.length?f.map(e=>h('div',{class:'card'},
+  h('div',{class:'row',style:'justify-content:space-between'},
+   h('div',{class:'row'},h('span',{class:'badge'},e.provider||'-'),h('span',{class:'mu'},e.updated?'diperbarui '+new Date(e.updated).toLocaleString('id-ID')+(e.updatedBy?' oleh '+e.updatedBy:''):'')),
+   h('div',{class:'row'},h('button',{class:'s',onclick:()=>edit(e)},'Edit'),h('button',{class:'s d',onclick:()=>del(e)},'Hapus'))),
+  h('div',{class:'kv'},field('Akun',e.user),field('Server email',e.server),field('Sandi',e.pass,true)),
+  e.note?h('div',{class:'note'},e.note):null)):[h('p',{class:'mu'},accounts.length?'Tidak ada hasil.':'Belum ada akun. Klik Tambah akun.')]))}
+function edit(e){
+ e=e||{};
+ const sel=h('select',{},...PROV.map(p=>h('option',{},p)));sel.value=PROV.includes(e.provider)?e.provider:(e.provider?'Lainnya':'Gmail');
+ const user=h('input',{value:e.user||'',placeholder:'alamat email / username',autocomplete:'off'});
+ const server=h('input',{value:e.server||'',placeholder:'mis. mail.domain.com (Zimbra / IMAP)',autocomplete:'off'});
+ const pass=h('input',{value:e.pass||'',placeholder:'password',autocomplete:'off'});
+ const note=h('textarea',{placeholder:'catatan, mis. pemilik, 2FA, tanggal ganti sandi'});note.value=e.note||'';
+ const err=h('div',{class:'err'});
+ showM(h('h2',{},e.id?'Edit akun':'Tambah akun'),h('label',{},'Jenis'),sel,h('label',{},'Akun / username'),user,
+  h('label',{},'Server email (opsional)'),server,h('label',{},'Password'),pass,h('label',{},'Catatan'),note,err,
+  h('div',{class:'row',style:'margin-top:12px;justify-content:flex-end'},h('button',{onclick:closeM},'Batal'),
+   h('button',{class:'p',onclick:async()=>{
+    if(!user.value.trim()){err.textContent='Isi akun / username.';return}
+    const data={provider:sel.value,user:user.value.trim(),server:server.value.trim(),pass:pass.value,note:note.value.trim(),updated:Date.now(),updatedBy:me};
+    try{await setDoc(e.id?doc(db,'projects',cur,'accounts',e.id):doc(collection(db,'projects',cur,'accounts')),data);closeM();toast('Tersimpan')}
+    catch(x){err.textContent='Gagal menyimpan: '+errMsg(x)}}},'Simpan')));user.focus()}
+async function del(e){
+ if(!await ask('Hapus akun '+e.user+'? Ini berlaku untuk semua anggota proyek.','Hapus'))return;
+ try{await deleteDoc(doc(db,'projects',cur,'accounts',e.id));toast('Dihapus')}catch(x){toast('Gagal menghapus: '+errMsg(x))}}
+
+/* ---------- Cadangan ---------- */
+function backup(){
+ const out={app:'brankastim',v:1,at:new Date().toISOString(),project:curDoc.name,accounts:accounts};
+ const day=new Date().toISOString().slice(0,10),slug=curDoc.name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+ const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'})),download:'cadangan-'+slug+'-'+day+'.json'});
+ document.body.append(a);a.click();a.remove();toast('Cadangan diunduh. File ini berisi password tanpa enkripsi, simpan dengan hati-hati.')}
+function restore(){
+ const f=h('input',{type:'file',accept:'.json,application/json'});
+ f.onchange=async()=>{const file=f.files[0];if(!file)return;
+  try{const j=JSON.parse(await file.text());if(j.app!=='brankastim'||!Array.isArray(j.accounts))throw 0;
+   if(!await ask('Pulihkan '+j.accounts.length+' akun ke proyek '+curDoc.name+'? Akun dengan ID sama akan ditimpa.','Pulihkan'))return;
+   let n=0;for(const{id,...d}of j.accounts){if(!id||!d.user)continue;await setDoc(doc(db,'projects',cur,'accounts',id),{...d,updated:Date.now(),updatedBy:me});n++}
+   toast(n+' akun dipulihkan')}catch(e){toast('File cadangan tidak valid atau tidak ada izin')}};
+ f.click()}
+
+/* ---------- Kelola akses ---------- */
+function manage(){
+ const email=h('input',{type:'email',placeholder:'email@gmail.com',autocomplete:'off'});
+ const role=h('select',{},h('option',{value:'m'},'Anggota'),h('option',{value:'a'},'Admin'));
+ const err=h('div',{class:'err'});
+ const list=h('div');
+ const draw=()=>list.replaceChildren(...curDoc.memberEmails.map(m=>h('div',{class:'mem'},
+  h('div',{class:'row'},h('span',{},m),h('span',{class:'badge'+(curDoc.admins.includes(m)?' b':'')},curDoc.admins.includes(m)?'Admin':'Anggota')),
+  m===me||m===SUPER?null:h('button',{class:'s d',onclick:async()=>{
+   if(!await ask('Cabut akses '+m+'?','Cabut'))return;
+   try{await updateDoc(doc(db,'projects',cur),{memberEmails:arrayRemove(m),admins:arrayRemove(m)});toast('Akses dicabut')}catch(e){toast(errMsg(e))}}},'Cabut'))));
+ draw();
+ unsubManage=onSnapshot(doc(db,'projects',cur),s=>{if(s.exists()&&modal.style.display==='flex'){curDoc={id:cur,...s.data()};draw()}});
+ showM(h('h2',{},'Kelola akses'),h('p',{class:'mu'},'Tambahkan alamat Gmail anggota. Mereka masuk sendiri dengan Google.'),list,
+  h('label',{},'Tambah anggota'),h('div',{class:'row'},h('div',{style:'flex:1;min-width:180px'},email),role,
+   h('button',{class:'p',onclick:async()=>{const m=email.value.trim().toLowerCase();err.textContent='';
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){err.textContent='Alamat email tidak valid.';return}
+    try{const u={memberEmails:arrayUnion(m)};if(role.value==='a')u.admins=arrayUnion(m);await updateDoc(doc(db,'projects',cur),u);email.value='';toast('Ditambahkan')}
+    catch(e){err.textContent=errMsg(e)}}},'Tambah')),err,
+  h('div',{class:'row',style:'margin-top:12px;justify-content:flex-end'},h('button',{onclick:()=>{unsubManage&&unsubManage();closeM()}},'Tutup')))}
+let unsubManage=null;
+</script>
+</body>
+</html>
